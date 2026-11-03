@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TechJobs India 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/styles.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">◆</div>
+      <div>
+        <h1>TechJobs India 2026</h1>
+        <p>AI-assisted job market analysis &amp; candidate matching</p>
+      </div>
+    </div>
+    <nav class="tabs" id="tabs">
+      <button data-tab="overview" class="active">Market Overview</button>
+      <button data-tab="matcher">Job Matcher</button>
+      <button data-tab="whatif">Skill Gaps &amp; What-If</button>
+      <button data-tab="advisor">AI Advisor</button>
+      <button data-tab="explore">Explore Jobs</button>
+      <button data-tab="data">Dataset</button>
+    </nav>
+    <button id="themeToggle" class="icon-btn" title="Toggle theme">◐</button>
+  </header>
+
+  <div id="sourceBanner" class="banner hidden"></div>
+
+  <main>
+    <!-- ============================== OVERVIEW ============================== -->
+    <section id="tab-overview" class="tab active">
+      <div class="kpis" id="kpis"></div>
+      <div class="grid g2">
+        <div class="card"><h3>Job postings by role</h3><canvas id="chRoles"></canvas></div>
+        <div class="card"><h3>Role opportunity score</h3>
+          <p class="hint">45% demand · 25% salary · 20% fresher-friendliness · 10% remote/hybrid</p>
+          <div id="opportunity"></div></div>
+        <div class="card"><h3>Top 15 cities</h3><canvas id="chCities"></canvas></div>
+        <div class="card"><h3>Top core skills in demand</h3><canvas id="chSkills"></canvas></div>
+        <div class="card"><h3>Disclosed salary by role (LPA)</h3><canvas id="chSalary"></canvas></div>
+        <div class="card"><h3>Fresher-friendly jobs by role (%)</h3><canvas id="chFresher"></canvas></div>
+        <div class="card"><h3>Work mode</h3><canvas id="chMode"></canvas></div>
+        <div class="card"><h3>Experience tier</h3><canvas id="chExp"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Role skill explorer</h3>
+        <div class="row"><select id="roleSkillSelect"></select></div>
+        <div id="roleSkills" class="bars"></div>
+      </div>
+    </section>
+
+    <!-- ============================== MATCHER ============================== -->
+    <section id="tab-matcher" class="tab">
+      <div class="layout">
+        <form class="card profile" id="profileForm">
+          <h3>Candidate profile</h3>
+          <label>Skills</label>
+          <div class="chips-input" id="skillBox">
+            <div id="skillChips" class="chips"></div>
+            <input id="skillInput" list="skillList" placeholder="Type a skill, press Enter" />
+            <datalist id="skillList"></datalist>
+          </div>
+          <div class="quick" id="quickSkills"></div>
+          <label for="exp">Experience (years)</label>
+          <input type="number" id="exp" min="0" max="40" step="0.5" value="1" />
+          <label for="role">Target role</label>
+          <select id="role"></select>
+          <label class="check"><input type="checkbox" id="roleOnly" /> Only analyse jobs in this role category</label>
+          <label for="city">Preferred city</label>
+          <input id="city" list="cityList" placeholder="Any city" />
+          <datalist id="cityList"></datalist>
+          <label>Preferred work mode</label>
+          <div class="seg" id="modeSeg">
+            <label><input type="checkbox" value="remote" checked /> Remote</label>
+            <label><input type="checkbox" value="hybrid" /> Hybrid</label>
+            <label><input type="checkbox" value="on-site" /> On-site</label>
+          </div>
+          <button type="submit" class="primary">Find matching jobs</button>
+          <button type="button" class="ghost" id="demoBtn">Load notebook demo candidate</button>
+          <p class="hint">Match score = 50% skills · 25% experience · 10% role relevance · 10% location · 5% work mode.
+            Eligible = experience met, ≥50% core skill match, and a relevant job title. This is <b>not</b> a hiring probability.</p>
+        </form>
+
+        <div class="results">
+          <div id="matchEmpty" class="card empty">Fill in your profile and press <b>Find matching jobs</b>.</div>
+          <div id="matchOut" class="hidden">
+            <div class="kpis" id="matchKpis"></div>
+            <div class="grid g2">
+              <div class="card"><h3>Fit breakdown</h3><canvas id="chFit"></canvas></div>
+              <div class="card"><h3>Recognised skills</h3><div id="recog"></div></div>
+            </div>
+            <div class="card">
+              <div class="row between"><h3>Best matching jobs</h3>
+                <div class="seg small" id="jobFilter">
+                  <button data-f="all" class="active">All</button><button data-f="eligible">Eligible</button><button data-f="near">Almost there</button>
+                </div></div>
+              <div id="jobList"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================== WHAT-IF ============================== -->
+    <section id="tab-whatif" class="tab">
+      <div id="wiEmpty" class="card empty">Run the <b>Job Matcher</b> first — gaps and simulations use that profile.</div>
+      <div id="wiOut" class="hidden">
+        <div class="grid g2">
+          <div class="card">
+            <h3>Priority skill gaps</h3>
+            <p class="hint">Missing skills ranked by how many extra jobs each would make you eligible for on its own. Click to add to the simulation.</p>
+            <div id="gapList" class="bars"></div>
+          </div>
+          <div class="card">
+            <h3>What-if simulator</h3>
+            <p class="hint">Pick skills to learn and see how your opportunities change.</p>
+            <div id="wiChips" class="chips"></div>
+            <div class="row"><input id="wiInput" list="skillList" placeholder="Add any skill…" /><button class="primary" id="wiRun">Simulate</button></div>
+            <div id="wiResult"></div>
+          </div>
+        </div>
+        <div class="card hidden" id="wiNewCard"><h3>Newly eligible jobs</h3><div id="wiNew"></div></div>
+      </div>
+    </section>
+
+    <!-- ============================== ADVISOR ============================== -->
+    <section id="tab-advisor" class="tab">
+      <div class="layout">
+        <div class="card profile">
+          <h3>AI career advisor</h3>
+          <p class="hint">Runs a 4-step workflow (match → recommend → what-if → explain), the same flow as the notebook's LangGraph.
+            With a Gemini key the explanation is written by Gemini; without one a rule-based advisor is used.</p>
+          <label for="apiKey">Gemini API key <span class="muted" id="keyStatus"></span></label>
+          <input type="password" id="apiKey" placeholder="Optional — not stored" autocomplete="off" />
+          <label for="question">Ask something specific (optional)</label>
+          <textarea id="question" rows="3" placeholder="e.g. Should I move to Bengaluru or stay in Mumbai?"></textarea>
+          <button class="primary" id="advisorRun">Generate career report</button>
+          <div id="steps" class="steps"></div>
+        </div>
+        <div class="results">
+          <div id="advEmpty" class="card empty">Uses the profile from the <b>Job Matcher</b> tab.</div>
+          <div id="advOut" class="card md hidden"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================== EXPLORE ============================== -->
+    <section id="tab-explore" class="tab">
+      <div class="card">
+        <div class="filters">
+          <input id="fq" placeholder="Search title, company, skill…" />
+          <select id="frole"><option value="">All roles</option></select>
+          <select id="fcity"><option value="">All cities</option></select>
+          <select id="fmode"><option value="">Any mode</option></select>
+          <label class="check"><input type="checkbox" id="ffresher" /> Fresher-friendly</label>
+          <label class="check"><input type="checkbox" id="fsalary" /> Salary disclosed</label>
+        </div>
+        <div class="table-wrap"><table id="jobTable"><thead><tr>
+          <th>Title</th><th>Company</th><th>Role</th><th>City</th><th>Mode</th><th>Exp</th><th>Salary</th><th>Skills</th>
+        </tr></thead><tbody></tbody></table></div>
+        <div class="row between pager"><span id="ftotal"></span>
+          <div><button class="ghost" id="prev">‹ Prev</button><span id="fpage"></span><button class="ghost" id="next">Next ›</button></div></div>
+      </div>
+    </section>
+
+    <!-- ============================== DATA ============================== -->
+    <section id="tab-data" class="tab">
+      <div class="grid g2">
+        <div class="card">
+          <h3>Load your dataset</h3>
+          <p class="hint">Upload <code>indian_tech_jobs_2026.csv</code> (or any CSV with the same columns). You can also place it at
+            <code>data/indian_tech_jobs_2026.csv</code> and restart — it will load automatically.</p>
+          <label class="drop" id="drop"><input type="file" id="file" accept=".csv" /><span>Drop CSV here or click to browse</span></label>
+          <div class="row"><button class="ghost" id="resetBtn">Reset to default dataset</button>
+            <button class="ghost" id="exportBtn">Export cleaned backend files</button></div>
+          <div id="uploadMsg"></div>
+        </div>
+        <div class="card">
+          <h3>Data quality report</h3>
+          <div id="quality"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>Match score measures profile-to-posting compatibility, not hiring probability. The dataset contains no hiring outcomes.</footer>
+  <div id="toast" class="toast hidden"></div>
+  <script src="/static/app.js"></script>
+</body>
+</html>
